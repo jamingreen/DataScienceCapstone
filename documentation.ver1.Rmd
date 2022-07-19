@@ -1,0 +1,224 @@
+---
+title: "Data Science Capstone"
+author: "Jamin Wong"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(tm)
+library(glue)
+library(ngram)
+library(tidyverse)
+library(qdapDictionaries)
+library(ggplot2)
+library(stringi)
+library(textmineR)
+opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+# Abstract
+In this project, I will use the data set provided by Coursera and Swift Key make a Shiny website. It will divided several parts:
+Understanding the problem
+
+-Data acquisition and cleaning
+
+-Exploratory analysis
+
+-Statistical modeling
+
+-Predictive modeling
+
+-Creative exploration
+
+-Creating a data product
+
+-Creating a short slide deck pitching your product
+
+The files in downloaded from: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip
+I will be using the files in final/en_US folder mainly
+
+# Getting and Cleaning Data
+
+## Load file
+```{r dnFi,cache=TRUE}
+fileB <- readLines("final/en_US/en_US.blogs.txt")
+fileN <- readLines("final/en_US/en_US.news.txt")
+fileT <- readLines("final/en_US/en_US.twitter.txt")
+fileA <- rbind(fileB, fileN, fileT)
+```
+## Summary
+```{r summ, cache=TRUE}
+summ <- sapply(list(fileB, fileN, fileT), stri_stats_general)
+wdctA <- sapply(list(fileB, fileN, fileT), wordcount)
+rbind(c("blogs", "news", "twitter"), summ, wdctA)
+```
+
+## Remove punctuation, number and whitespace
+```{r rmPun,cache=TRUE}
+samp <- fileA %>% removePunctuation() %>% removeNumbers() %>% tolower()
+```
+This is to remove the punctuation, numbers and turn every word into lower case so that "the," and "The" count as the same word.
+
+## Sample file (we will only take 0.001 of the total data)
+```{r sample, cache= TRUE}
+samp <- samp[sapply(samp, wordcount) > 3]
+samp <- sample(samp, as.integer(round(length(samp) * 0.01)))
+```
+The sample is taken from random sampling with size 0.001 of the original (only including lines with more than 3 words). This is to reduce the file size and processing.  
+Removing all lines with less than 4 words is to for ngrams as it require every lines to have at least n words.
+```{r print, cache=TRUE}
+wordcount(samp, count_fun = min)
+```
+
+# Exploratory Analysis
+In the exploratory analysis, I will be using n grams to find out the common phrases
+
+## 1-grams (phrases with one word)
+```{r 1gram,cache=TRUE}
+ng1 <- ngram(samp, n=1)
+pt1 <- get.phrasetable(ng1) %>% as.data.frame()
+head(pt1, 20)
+```
+  
+### frequency plot 1-grams
+```{r frePlot1, cache=TRUE}
+g1 <- ggplot(pt1[1:15,], aes(x = reorder(ngrams, -freq), y=freq, fill=ngrams))
+g1 <- g1 + geom_bar(stat="identity") + labs(x = "word", y = "frequency", title = "Top 15 words with highest frequency in the file text")
+g1
+```
+  
+"`r pt1$ngrams[1]`", "`r pt1$ngrams[2]`", and "`r pt1$ngrams[3]`" have the three highest frequency in 1-grams.
+
+## 2-grams (phrase with two words)
+```{r 2gram, cache=TRUE}
+ng2 <- ngram(samp, n = 2)
+pt2 <- get.phrasetable(ng2) %>% as.data.frame()
+head(pt2, 20)
+```
+
+### frequency plot 2-grams
+```{r frePlot2, cache=TRUE}
+g2 <- ggplot(pt2[1:15,], aes(x = reorder(ngrams, -freq), y=freq, fill=ngrams))
+g2 <- g2 + geom_bar(stat="identity") + labs(x = "phrase", y = "frequency", title = "Top 15 phrase with 2 words with highest frequency in the file text") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+g2
+```
+  
+"`r pt2$ngrams[1]`", "`r pt2$ngrams[2]`", and "`r pt2$ngrams[3]`" have the three highest frequency in 2-grams.  
+All of the top four contains the word "the".  
+
+
+## 3-grams (phrase with three words)
+```{r 3gram,cache=TRUE}
+ng3 <- ngram(samp, n=3)
+pt3 <- get.phrasetable(ng3) %>% as.data.frame()
+head(pt3, 20)
+```
+
+### frequency plot 3-grams
+```{r frePlot3, cache=TRUE}
+g3 <- ggplot(pt3[1:15,], aes(x = reorder(ngrams, -freq), y=freq, fill=ngrams))
+g3 <- g3 + geom_bar(stat="identity") + 
+  labs(x = "phrase", y = "frequency", title = "Top 15 phrase with 3 words with highest frequency in the file text") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),legend.position="bottom")
+
+g3
+```
+  
+"`r pt3$ngrams[1]`", "`r pt3$ngrams[2]`", "`r pt3$ngrams[3]`", and "`r pt3$ngrams[4]`" have the four highest frequency in 3-grams.  
+All of the top three contains the words "the" and "of"
+
+### 4-grams
+```{r 4gram, cache = TRUE}
+ng4 <- ngram(samp, n=4)
+pt4 <- get.phrasetable(ng4) %>% as.data.frame()
+head(pt4, 20)
+```
+
+### Total word count in the file
+```{r wdct, cache=TRUE}
+wdct <- wordcount(samp)
+wdct
+```
+
+### average number of character in each word
+```{r charnum, cache=TRUE}
+charPwd <- nchar(samp) / wdct
+```
+
+## How many unique words is needed to cover 50% of the file text?
+```{r,cache= TRUE}
+count = 0
+for (i in 1:nrow(pt1)) 
+{
+  count = count + pt1$freq[i]
+  if (count >= 0.5 * wdct)
+  {
+    break
+  }
+}
+i
+i/nrow(pt1)
+```
+It require `r i` number of unique words to cover 50% of the file text, which `r i/nrow(pt1)` of the total number of unique words.
+
+## Find non-English words
+```{r nEng, cache= TRUE}
+#Load a English dictionary
+data("GradyAugmented")
+
+# Get all words that are in the dictionary
+noEngIn <- sapply(pt1$ngrams, function(x) x %>% str_trim  %in% GradyAugmented)
+
+nonEng <- pt1$ngrams[!noEngIn]
+head(nonEng)
+```
+
+Remove number of word start with capitalized data
+```{r rmNum, cache=TRUE}
+# Remove words that contain numbers
+nonEng <- nonEng[!grepl(".*?[0-9]+.*?", str_trim(nonEng))]
+
+# Remove words that is capitalized
+# It is likely that such word is a special noun
+nonEng <- nonEng[!grepl("^[A-Z]", str_trim(nonEng))]
+head(nonEng)
+```
+From the above list of character, we can see there is little to none words from foreign languages.
+
+## Exploratory analysis summary
+I think 0.1% of the original data can already have a accurate representation of the training set since the sample already have `r wdct` words.  
+The reduction of sample set can allow more rapid exploration of the data while keeping the accuracy of the findings.
+
+# Text Prediction
+
+## Plan
+
+### Prediction algorithm
+I will create a prediction algorithm base on the n-grams words frequency. The frequency convert to probability.  
+
+1. Find all 3-grams phrase that contain the input word
+2. Use the frequency of all the phrase to generate a probability distribution to determine which which is the next word.
+3. For words that hasn't appears in the n-grams, it will return a random 3 word phrase generated by the frequency (the higher the frequency in the training set, the higher the chance that the phrase is output)
+
+### Shiny app
+It will have a side panel which allow user to input word.
+It will also have the main panel which will produce output phrase from the prediction algorithm and the top three most probable phrase base on the probability distribution
+
+# Prediction Model
+```{r print1, cache=TRUE}
+start.time = Sys.time()
+pt3[grep("^me the",pt3$ngram),]
+pt3[grep("^-but the",pt3$ngram),]
+pt3[grep("^-at the",pt3$ngram),]
+pt3[grep("^-on my",pt3$ngram),]
+pt3[grep("^quite some",pt3$ngram),]
+pt3[grep("^little",pt3$ngram),]
+pt3[grep("^during the",pt3$ngram),]
+pt3[grep("^must be",pt3$ngram),]
+Sys.time() - start.time
+```

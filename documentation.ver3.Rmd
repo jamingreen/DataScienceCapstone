@@ -1,0 +1,255 @@
+---
+title: "Data Science Capstone"
+author: "Jamin Wong"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(tm)
+library(tidyverse)
+library(ggplot2)
+library(stringi)
+library(textmineR)
+library(glue)
+library(ngram)
+library(tidytext)
+library(textmineR)
+library(RWeka)
+opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+# Abstract
+In this project, I will use the data set provided by Coursera and Swift Key make a Shiny website. It will divided several parts:
+Understanding the problem
+
+-Data acquisition and cleaning
+
+-Exploratory analysis
+
+-Statistical modeling
+
+-Predictive modeling
+
+-Creative exploration
+
+-Creating a data product
+
+-Creating a short slide deck pitching your product
+
+The files in downloaded from: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip
+I will be using the files in final/en_US folder mainly
+
+# Getting Data
+
+### Load file
+```{r dnFi,eval= FALSE}
+fileB <- readLines("final/en_US/en_US.blogs.txt")
+fileN <- readLines("final/en_US/en_US.news.txt")
+fileT <- readLines("final/en_US/en_US.twitter.txt")
+fileA <- rbind(fileB, fileN, fileT)
+```
+### Summary
+```{r summ, eval= FALSE}
+summ <- sapply(list(fileB, fileN, fileT), stri_stats_general)
+wdctA <- sapply(list(fileB, fileN, fileT), wordcount)
+rbind(c("blogs", "news", "twitter"), summ, wdctA)
+```
+
+# Sample
+Create sample with only a small portion of the original to reduce the processing time while keeping the accuracy of the result model.
+### Create Sample
+```{r defp}
+p <- 0.05
+```
+It will use `r p` of the original data set.  
+
+```{r creSam, eval=FALSE}
+samp <- sample(fileA, size = round(length(fileA) * p))
+```
+The sample is taken from random sampling with size `r p`` of the original. This is to reduce the file size and processing.  
+
+### Save Sample
+```{r savSam, eval= FALSE}
+writeLines(samp, "sample.txt")
+```
+Create a sample once and then load it from the sample.txt after the first time
+
+### Load Sample
+```{r ldSam, cache=TRUE}
+sample_txt <- readLines("sample.txt")
+```
+The sample is taken from random sampling with size 0.05 of the original
+
+
+### Sample Summary
+```{r samSumm, cache=TRUE}
+wdct <- wordcount(sample_txt)
+cbind(
+  t(stri_stats_general(sample_txt)),
+  fileSize = format(object.size(sample_txt), "Mb"),
+  wordCount = wdct
+)
+```
+
+# Cleaning data
+
+### Remove URL
+```{r rmURL, cache=TRUE}
+sample_txt <-  gsub("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+","",sample_txt)
+```
+
+### Remove punctuation
+```{r rmPun, cache=TRUE}
+sample_txt <- sample_txt %>% removePunctuation()
+```
+
+### Remove numbers
+```{r rmNum, cache=TRUE}
+sample_txt <- sample_txt %>% removeNumbers()
+```
+
+### Change all to lower case
+```{r toLow, cache=TRUE}
+sample_txt <- sample_txt %>% tolower()
+```
+
+### Remove extra white space
+```{r rmWs}
+sample_txt <- sample_txt %>% stripWhitespace()
+```
+
+# Exploratory Analysis
+In the exploratory analysis, I will be using n grams to find out the common phrases
+## N-grams
+
+### Unigram
+```{r unigram, cache=TRUE}
+sample_txt <- data.frame(text = sample_txt)
+unigram <- sample_txt %>% unnest_tokens(word, text)
+```
+
+### Unigram phrase table with proportion
+```{r uniPt, cache = TRUE}
+uniPt <- unigram %>%
+  count(word,sort = TRUE) %>%  
+  mutate(prop = n / sum(n))
+```
+
+```{r}
+head(uniPt, 20)
+```
+
+#### top 20 words in unigram
+```{r uniPlot, cache=TRUE}
+g1 <- ggplot(uniPt[1:20,], aes(x = reorder(word, -n), y = n, fill=word))
+g1 <- g1 <- g1 + geom_bar(stat="identity") + labs(x = "word", y = "frequency", title = "Top 20 words with highest frequency in the sample text")
+g1
+```
+  
+"`r uniPt$word[1]`", "`r uniPt$word[2]`", and "`r uniPt$word[3]`" have the three highest frequency in the unigrams.
+
+### Bigram
+```{r bigram, cache=TRUE}
+bigram <- sample_txt %>% unnest_tokens(bigram,text, token = "ngrams", n = 2)
+```
+
+### Bigram phrase table with proportion
+```{r biPt, cache = TRUE}
+biPt <- bigram %>%
+  count(bigram, sort = TRUE) %>% 
+  mutate(prop = n / sum(n)) %>% separate(bigram,c("word1", "word2"), sep = " ") %>% 
+  mutate(phrase = paste(word1, word2)) %>% 
+  na.omit()
+```
+
+
+```{r}
+head(biPt, 20)
+```
+
+### top 20 phrase in bigram
+```{r biPlot, cache = TRUE}
+g2 <- ggplot(biPt[1:20,], aes(x= reorder(phrase, -n), y = n, fill = phrase))
+g2 <- g2 + geom_bar(stat="identity") + 
+  labs(x = "word", y = "frequency", title = "Top 20 2-words phrase with highest frequency in the sample text") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),legend.position="bottom")
+g2
+```
+  
+"`r biPt$phrase[1]`", "`r biPt$phrase[2]`", and "`r biPt$phrase[3]`" have the three highest frequency in the bigrams.
+
+### Trigram
+```{r trigram, cache=TRUE}
+trigram <- sample_txt %>% unnest_tokens(trigram,text, token = "ngrams", n = 3)
+```
+
+### Trigram phrase table with proportion
+```{r triPt, cache = TRUE}
+triPt <- trigram %>%
+  count(trigram, sort = TRUE) %>%
+  mutate(prop = n / sum(n)) %>% separate(trigram,c("word1", "word2", "word3"), sep = " ") %>%
+  mutate(phrase = paste(word1, word2, word3)) %>% 
+  na.omit()
+```
+
+```{r}
+head(triPt, 20)
+```
+
+### top 20 phrase in trigram
+```{r triPlot, cache = TRUE}
+g3 <- ggplot(triPt[1:20,], aes(x= reorder(phrase, -n), y = n, fill = phrase))
+g3 <- g3 + geom_bar(stat="identity") + 
+  labs(x = "word", y = "frequency", title = "Top 20 3-words phrase with highest frequency in the sample text") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),legend.position="bottom")
+g3
+```
+  
+"`r triPt$phrase[1]`", "`r triPt$phrase[2]`", and "`r triPt$phrase[3]`" have the three highest frequency in the trigrams.
+
+## Save the phrase tables for later predictions
+```{r svPt, eval = FALSE}
+saveRDS(uniPt, "./ngramTable/unigram_phrase_table.rds")
+saveRDS(biPt, "./ngramTable/bigram_phrase_table.rds")
+saveRDS(triPt, "./ngramTable/trigram_phrase_table.rds")
+```
+
+## How many unique words is needed to cover 50% of the sample text?
+```{r, cache=TRUE}
+count = 0
+for (i in 1:nrow(uniPt)) 
+{
+  count = count + uniPt$n[i]
+  if (count >= 0.5 * wdct)
+  {
+    break
+  }
+}
+i
+i/nrow(uniPt)
+```
+  
+It require `r i` number of unique words to cover 50% of the sample text, which `r format(i/nrow(uniPt), scientific=TRUE)` of the total number of unique words.
+
+## Exploratory analysis summary
+I think 5% of the original data can already have a accurate representation of the training set since the sample already have `r wdct` words.  
+The reduction of sample set can allow more rapid exploration of the data while keeping the accuracy of the findings.
+
+# Text Prediction
+
+## Plan
+
+### Prediction algorithm
+I will create a prediction algorithm base on the n-grams words frequency. The frequency convert to probability.  
+
+1. Find all 3-grams phrase that contain the input word
+2. Use the frequency of all the phrase to generate a probability distribution to determine which which is the next word.
+3. For words that hasn't appears in the n-grams, it will return a random 3 word phrase generated by the frequency (the higher the frequency in the training set, the higher the chance that the phrase is output)
+
+### Shiny app
+It will have a side panel which allow user to input word.
+It will also have the main panel which will produce output phrase from the prediction algorithm and the top three most probable phrase base on the probability distribution
