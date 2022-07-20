@@ -146,11 +146,20 @@ head(uniPt, 20)
 #### top 20 words in unigram
 ```{r uniPlot, cache=TRUE}
 g1 <- ggplot(uniPt[1:20,], aes(x = reorder(word, -n), y = n, fill=word))
-g1 <- g1 <- g1 + geom_bar(stat="identity") + labs(x = "word", y = "frequency", title = "Top 20 words with highest frequency in the sample text")
+g1 <- g1 + geom_bar(stat="identity") + 
+  labs(x = "word", y = "frequency", title = "Top 20 words with highest frequency in the sample text")
 g1
 ```
   
 "`r uniPt$word[1]`", "`r uniPt$word[2]`", and "`r uniPt$word[3]`" have the three highest frequency in the unigrams.
+
+### frequency of top 1000 words
+```{r top1th, cache=TRUE}
+g4 <- ggplot(uniPt[1:1000,], aes(x = as.numeric(row.names(uniPt[1:1000,])), y = n))
+g4 <- g4 + geom_point() + 
+  labs(x = "word", y = "frequency", title = "frequency of top 1000 words")
+g4
+```
 
 ### Bigram
 ```{r bigram, cache=TRUE}
