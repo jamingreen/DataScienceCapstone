@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jamin Wong" />
 
-<meta name="date" content="2022-07-19" />
+<meta name="date" content="2022-07-20" />
 
 <title>Data Science Capstone</title>
 
@@ -365,7 +365,7 @@ pre code {
 
 <h1 class="title toc-ignore">Data Science Capstone</h1>
 <h4 class="author">Jamin Wong</h4>
-<h4 class="date">2022-07-19</h4>
+<h4 class="date">2022-07-20</h4>
 
 </div>
 
@@ -390,15 +390,34 @@ I will be using the files in final/en_US folder mainly</p>
 <div id="load-file" class="section level3">
 <h3>Load file</h3>
 <pre class="r"><code>fileB &lt;- readLines(&quot;final/en_US/en_US.blogs.txt&quot;)
-fileN &lt;- readLines(&quot;final/en_US/en_US.news.txt&quot;)
-fileT &lt;- readLines(&quot;final/en_US/en_US.twitter.txt&quot;)
-fileA &lt;- rbind(fileB, fileN, fileT)</code></pre>
+fileN &lt;- readLines(&quot;final/en_US/en_US.news.txt&quot;)</code></pre>
+<pre><code>## Warning in readLines(&quot;final/en_US/en_US.news.txt&quot;): incomplete final line found
+## on &#39;final/en_US/en_US.news.txt&#39;</code></pre>
+<pre class="r"><code>fileT &lt;- readLines(&quot;final/en_US/en_US.twitter.txt&quot;)</code></pre>
+<pre><code>## Warning in readLines(&quot;final/en_US/en_US.twitter.txt&quot;): line 167155 appears to
+## contain an embedded nul</code></pre>
+<pre><code>## Warning in readLines(&quot;final/en_US/en_US.twitter.txt&quot;): line 268547 appears to
+## contain an embedded nul</code></pre>
+<pre><code>## Warning in readLines(&quot;final/en_US/en_US.twitter.txt&quot;): line 1274086 appears to
+## contain an embedded nul</code></pre>
+<pre><code>## Warning in readLines(&quot;final/en_US/en_US.twitter.txt&quot;): line 1759032 appears to
+## contain an embedded nul</code></pre>
+<pre class="r"><code>fileA &lt;- rbind(fileB, fileN, fileT)</code></pre>
+<pre><code>## Warning in rbind(fileB, fileN, fileT): number of columns of result is not a
+## multiple of vector length (arg 1)</code></pre>
 </div>
 <div id="summary" class="section level3">
 <h3>Summary</h3>
 <pre class="r"><code>summ &lt;- sapply(list(fileB, fileN, fileT), stri_stats_general)
 wdctA &lt;- sapply(list(fileB, fileN, fileT), wordcount)
 rbind(c(&quot;blogs&quot;, &quot;news&quot;, &quot;twitter&quot;), summ, wdctA)</code></pre>
+<pre><code>##             [,1]        [,2]       [,3]       
+##             &quot;blogs&quot;     &quot;news&quot;     &quot;twitter&quot;  
+## Lines       &quot;899288&quot;    &quot;77259&quot;    &quot;2360148&quot;  
+## LinesNEmpty &quot;899288&quot;    &quot;77259&quot;    &quot;2360148&quot;  
+## Chars       &quot;206824382&quot; &quot;15639408&quot; &quot;162096031&quot;
+## CharsNWhite &quot;170389539&quot; &quot;13072698&quot; &quot;134082634&quot;
+## wdctA       &quot;37334131&quot;  &quot;2643969&quot;  &quot;30373543&quot;</code></pre>
 </div>
 </div>
 <div id="sample" class="section level1">
@@ -416,6 +435,10 @@ original. This is to reduce the file size and processing.</p>
 <pre class="r"><code>writeLines(samp, &quot;sample.txt&quot;)</code></pre>
 <p>Create a sample once and then load it from the sample.txt after the
 first time</p>
+<pre><code>## Warning in rm(list = c(&quot;fileB&quot;, &quot;fileA&quot;, &quot;fileT&quot;, &quot;fileT&quot;, &quot;samp&quot;)): object
+## &#39;fileT&#39; not found</code></pre>
+<pre><code>## Warning in rm(list = c(&quot;fileB&quot;, &quot;fileA&quot;, &quot;fileT&quot;, &quot;fileT&quot;, &quot;samp&quot;)): object
+## &#39;samp&#39; not found</code></pre>
 </div>
 <div id="load-sample" class="section level3">
 <h3>Load Sample</h3>
@@ -525,27 +548,27 @@ g4</code></pre>
   mutate(phrase = paste(word1, word2)) %&gt;% 
   na.omit()</code></pre>
 <pre class="r"><code>head(biPt, 20)</code></pre>
-<pre><code>##    word1 word2     n         prop
-## 1     of   the 48821 0.0049532932
-## 2     in   the 45007 0.0045663314
-## 3     to   the 22994 0.0023329310
-## 4     on   the 20785 0.0021088097
-## 5    for   the 19791 0.0020079602
-## 6     to    be 16694 0.0016937440
-## 7     at   the 15035 0.0015254248
-## 8    and   the 14637 0.0014850444
-## 9     in     a 13261 0.0013454378
-## 10  with   the 11597 0.0011766113
-## 11    is     a 10535 0.0010688627
-## 12    it   was 10485 0.0010637897
-## 13  from   the  9797 0.0009939865
-## 14   for     a  9501 0.0009639548
-## 15    it    is  9239 0.0009373728
-## 16  with     a  9117 0.0009249949
-## 17    of     a  8919 0.0009049061
-## 18     i   was  8915 0.0009045003
-## 19   and     i  8510 0.0008634097
-## 20     i  have  8386 0.0008508289</code></pre>
+<pre><code>##    word1 word2     n         prop   phrase
+## 1     of   the 48821 0.0049532932   of the
+## 2     in   the 45007 0.0045663314   in the
+## 3     to   the 22994 0.0023329310   to the
+## 4     on   the 20785 0.0021088097   on the
+## 5    for   the 19791 0.0020079602  for the
+## 6     to    be 16694 0.0016937440    to be
+## 7     at   the 15035 0.0015254248   at the
+## 8    and   the 14637 0.0014850444  and the
+## 9     in     a 13261 0.0013454378     in a
+## 10  with   the 11597 0.0011766113 with the
+## 11    is     a 10535 0.0010688627     is a
+## 12    it   was 10485 0.0010637897   it was
+## 13  from   the  9797 0.0009939865 from the
+## 14   for     a  9501 0.0009639548    for a
+## 15    it    is  9239 0.0009373728    it is
+## 16  with     a  9117 0.0009249949   with a
+## 17    of     a  8919 0.0009049061     of a
+## 18     i   was  8915 0.0009045003    i was
+## 19   and     i  8510 0.0008634097    and i
+## 20     i  have  8386 0.0008508289   i have</code></pre>
 </div>
 <div id="top-20-phrase-in-bigram" class="section level3">
 <h3>top 20 phrase in bigram</h3>
@@ -605,9 +628,9 @@ frequency in the trigrams.</p>
 </div>
 <div id="save-the-phrase-tables-for-later-predictions" class="section level2">
 <h2>Save the phrase tables for later predictions</h2>
-<pre class="r"><code>saveRDS(uniPt, &quot;./ngramTable/unigram_phrase_table.rds&quot;)
-saveRDS(biPt, &quot;./ngramTable/bigram_phrase_table.rds&quot;)
-saveRDS(triPt, &quot;./ngramTable/trigram_phrase_table.rds&quot;)</code></pre>
+<pre class="r"><code>saveRDS(uniPt, &quot;./ngramTable/ngram1_phrase_table.rds&quot;)
+saveRDS(biPt, &quot;./ngramTable/ngram2_phrase_table.rds&quot;)
+saveRDS(triPt, &quot;./ngramTable/ngram3_phrase_table.rds&quot;)</code></pre>
 </div>
 <div id="how-many-unique-words-is-needed-to-cover-50-of-the-sample-text" class="section level2">
 <h2>How many unique words is needed to cover 50% of the sample
@@ -661,6 +684,486 @@ output)</li>
 also have the main panel which will produce output phrase from the
 prediction algorithm and the top three most probable phrase base on the
 probability distribution</p>
+</div>
+</div>
+</div>
+<div id="prediction" class="section level1">
+<h1>Prediction</h1>
+<div id="model-1" class="section level2">
+<h2>Model 1</h2>
+<div id="function-1" class="section level3">
+<h3>function 1</h3>
+<pre class="r"><code>predic1 &lt;- function(sen, n, len)
+{
+  filePath &lt;- paste0(&quot;ngramTable/ngram&quot;,as.character(n),&quot;_phrase_table.rds&quot;)
+  pt &lt;- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  if (n == 2)
+  {
+    resPt &lt;- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt &lt;- pt[which(apply(pt[,1:(n-1)],1,function(x) all(x == sen[(len-n+2):len]))),c(1:(n+1), n+3)]
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic1(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %&gt;% na.omit())
+  }
+}
+
+pred1 &lt;- function(sen)
+{
+  start_time &lt;- Sys.time()
+  sen &lt;- sen %&gt;% removePunctuation() %&gt;% tolower() %&gt;% str_split(&quot; &quot;)
+  sen &lt;- sen[[1]]
+  len &lt;- length(sen)
+  n &lt;- min(len, 3)
+  predic1(sen, n, len)
+}</code></pre>
+<p>This function use the unigram, bigram and trigram to predict the next
+word.<br />
+It will return the top 10 most probable result according to the
+n-grams.<br />
+1. It first check if there is any row in the trigram match the last two
+words in the sentence. If yes, it returns the top 10 highest proportion
+result. 2. If there is no row in the trigram that matches the sentence,
+it check from the bigram and return the result if it can find any row
+that matches. 3. If it still could not find any matches, it will return
+the top 10 highest frequency word in the unigram.</p>
+</div>
+<div id="testing-1" class="section level3">
+<h3>Testing 1</h3>
+<div id="test-1.1" class="section level4">
+<h4>Test 1.1</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred1(&quot;Well I&#39;m pretty sure my granny has some old bagpipes in her garage I&#39;ll dust them off and be on my&quot;)</code></pre>
+<pre><code>##       word1 word2    word3   n         phrase
+## 1111     on    my      way 148      on my way
+## 1623     on    my      own 118      on my own
+## 3460     on    my     blog  73     on my blog
+## 3782     on    my     face  69     on my face
+## 4664     on    my     mind  60     on my mind
+## 6692     on    my    phone  47    on my phone
+## 8807     on    my     list  39     on my list
+## 13580    on    my computer  29 on my computer
+## 15040    on    my     part  27     on my part
+## 15846    on    my birthday  26 on my birthday</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time</code></pre>
+<p>The time taken to produce the result is 35.58193 secs.</p>
+</div>
+<div id="test-1.2" class="section level4">
+<h4>Test 1.2</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred1(&quot;Talking to your mom has the same effect as a hug and helps reduce your&quot;)</code></pre>
+<pre><code>##          word1 word2    word3 n               phrase
+## 571932  reduce  your exposure 3 reduce your exposure
+## 1182712 reduce  your   intake 2   reduce your intake
+## 4005938 reduce  your   credit 1   reduce your credit
+## 4005939 reduce  your     debt 1     reduce your debt
+## 4005940 reduce  your   energy 1   reduce your energy
+## 4005941 reduce  your  monthly 1  reduce your monthly
+## 4005942 reduce  your     risk 1     reduce your risk
+## 4005943 reduce  your   team’s 1   reduce your team’s
+## 4005944 reduce  your     word 1     reduce your word</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 36.5567 secs</code></pre>
+<p>The time taken to produce the result is 36.5567 secs.</p>
+</div>
+<div id="test-1.3" class="section level4">
+<h4>Test 1.3</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred1(&quot;Be grateful for the good times and keep the faith during the&quot;)</code></pre>
+<pre><code>##        word1 word2     word3   n               phrase
+## 2013  during   the       day 103       during the day
+## 2039  during   the     first 102     during the first
+## 4428  during   the      week  62      during the week
+## 6621  during   the         s  47         during the s
+## 8137  during   the      same  41      during the same
+## 8400  during   the    summer  40    during the summer
+## 8689  during   the      past  39      during the past
+## 8998  during   the      last  38      during the last
+## 9362  during   the    season  37    during the season
+## 11056 during   the recession  33 during the recession</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 35.2785 secs</code></pre>
+<p>The time taken to produce the result is 35.2785 secs.</p>
+</div>
+</div>
+<div id="evaluation" class="section level3">
+<h3>Evaluation</h3>
+<div id="result" class="section level4">
+<h4>Result</h4>
+<p>From the result, we can see that the there is too many result for
+some testing and the time is not ideal.</p>
+</div>
+<div id="room-of-improvement" class="section level4">
+<h4>Room of improvement</h4>
+<p>we can improve the algorithm in these direction:</p>
+<ol style="list-style-type: decimal">
+<li>Increase specificity</li>
+<li>Decrease processing time</li>
+</ol>
+</div>
+</div>
+</div>
+<div id="model-2" class="section level2">
+<h2>Model 2</h2>
+<p>I willcreate quadgram and quintgram to improve accuracy</p>
+<div id="create-quadgram-and-quintgram" class="section level3">
+<h3>Create quadgram and quintgram</h3>
+<pre class="r"><code>sample_txt &lt;- readLines(&quot;sample.txt&quot;)
+  sample_txt &lt;-  gsub(&quot;http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&amp;+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+&quot;,&quot;&quot;,sample_txt) %&gt;% 
+    removePunctuation() %&gt;%
+    removeNumbers() %&gt;%
+    tolower() %&gt;%
+    stripWhitespace()
+  sample_txt &lt;- data.frame(text = sample_txt)
+  
+  quadgram &lt;- sample_txt %&gt;% unnest_tokens(quadgram,text, token = &quot;ngrams&quot;, n = 4)
+  quadPt &lt;- quadgram %&gt;%
+    count(quadgram, sort = TRUE) %&gt;%
+    mutate(prop = n / sum(n)) %&gt;% separate(quadgram,c(&quot;word1&quot;, &quot;word2&quot;, &quot;word3&quot;, &quot;word4&quot;), sep = &quot; &quot;) %&gt;%
+    mutate(phrase = paste(word1, word2, word3, word4)) %&gt;% 
+    na.omit()
+  saveRDS(quadPt, &quot;./ngramTable/ngram4_phrase_table.rds&quot;)
+  rm(list = c(&quot;quadgram&quot;,&quot;quadPt&quot;))
+  
+  quintgram &lt;- sample_txt %&gt;% unnest_tokens(quintgram,text, token = &quot;ngrams&quot;, n = 5)
+  quintPt &lt;- quintgram %&gt;%
+    count(quintgram, sort = TRUE) %&gt;%
+    mutate(prop = n / sum(n)) %&gt;% separate(quintgram,c(&quot;word1&quot;, &quot;word2&quot;, &quot;word3&quot;, &quot;word4&quot;, &quot;word5&quot;), sep = &quot; &quot;) %&gt;%
+    mutate(phrase = paste(word1, word2, word3, word4, word5)) %&gt;% 
+    na.omit()
+  saveRDS(quintPt, &quot;./ngramTable/ngram5_phrase_table.rds&quot;)
+  rm(list = c(&quot;quintgram&quot;,&quot;quintPt&quot;))</code></pre>
+</div>
+<div id="function-2" class="section level3">
+<h3>function 2</h3>
+<pre class="r"><code>predic2 &lt;- function(sen, n, len)
+{
+  filePath &lt;- paste0(&quot;ngramTable/ngram&quot;,as.character(n),&quot;_phrase_table.rds&quot;)
+  pt &lt;- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  if (n == 2)
+  {
+    resPt &lt;- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt &lt;- pt[which(apply(pt[,1:(n-1)],1,function(x) all(x == sen[(len-n+2):len]))),c(1:(n+1), n+3)]
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic2(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %&gt;% na.omit())
+  }
+}
+
+pred2 &lt;- function(sen)
+{
+  start_time &lt;- Sys.time()
+  sen &lt;- sen %&gt;% removePunctuation() %&gt;% tolower() %&gt;% str_split(&quot; &quot;)
+  sen &lt;- sen[[1]]
+  len &lt;- length(sen)
+  n &lt;- min(len, 5)
+  predic2(sen, n, len)
+}</code></pre>
+<p>This function is the same as the previous one other than this one
+uses n-gram phrase table of higher order (4 and 5).</p>
+</div>
+<div id="testing-2" class="section level3">
+<h3>Testing 2</h3>
+<div id="test-2.1" class="section level4">
+<h4>Test 2.1</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred2(&quot;Well I&#39;m pretty sure my granny has some old bagpipes in her garage I&#39;ll dust them off and be on my&quot;)</code></pre>
+<pre><code>##         word1 word2 word3 word4 word5 n             phrase
+## 1581498   and    be    on    my mouth 1 and be on my mouth</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time</code></pre>
+<p>The time taken to produce the result is 1.165553 mins.</p>
+</div>
+<div id="test-2.2" class="section level4">
+<h4>Test 2.2</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred2(&quot;Talking to your mom has the same effect as a hug and helps reduce your&quot;)</code></pre>
+<pre><code>##          word1 word2    word3 n               phrase
+## 571932  reduce  your exposure 3 reduce your exposure
+## 1182712 reduce  your   intake 2   reduce your intake
+## 4005938 reduce  your   credit 1   reduce your credit
+## 4005939 reduce  your     debt 1     reduce your debt
+## 4005940 reduce  your   energy 1   reduce your energy
+## 4005941 reduce  your  monthly 1  reduce your monthly
+## 4005942 reduce  your     risk 1     reduce your risk
+## 4005943 reduce  your   team’s 1   reduce your team’s
+## 4005944 reduce  your     word 1     reduce your word</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 3.306058 mins</code></pre>
+<p>The time taken to produce the result is 3.306058 mins.</p>
+</div>
+<div id="test-2.3" class="section level4">
+<h4>Test 2.3</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred2(&quot;Be grateful for the good times and keep the faith during the&quot;)</code></pre>
+<pre><code>##         word1  word2 word3   word4 n                   phrase
+## 2779917 faith during   the   three 1   faith during the three
+## 2779918 faith during   the worship 1 faith during the worship</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 2.319755 mins</code></pre>
+<p>The time taken to produce the result is 2.319755 mins.</p>
+</div>
+</div>
+</div>
+<div id="model-3" class="section level2">
+<h2>Model 3</h2>
+<p>Decrease run time and processing powered needed of the function.</p>
+<div id="function-3" class="section level3">
+<h3>function 3</h3>
+<pre class="r"><code>predic3 &lt;- function(sen, n, len)
+{
+  filePath &lt;- paste0(&quot;ngramTable/ngram&quot;,as.character(n),&quot;_phrase_table.rds&quot;)
+  pt &lt;- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  print(sen[(len-n+2):len])
+  print(n)
+  if (n == 2)
+  {
+    resPt &lt;- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt &lt;- pt
+    for (i in 1:(n-1))
+    {
+      resPt &lt;- resPt[resPt[,i] == sen[len-n+i+1],]
+    }
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic3(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %&gt;% na.omit())
+  }
+}
+
+pred3 &lt;- function(sen)
+{
+  start_time &lt;- Sys.time()
+  sen &lt;- sen %&gt;% removePunctuation() %&gt;% tolower() %&gt;% str_split(&quot; &quot;)
+  sen &lt;- sen[[1]]
+  len &lt;- length(sen)
+  n &lt;- min(len, 5)
+  res &lt;- predic3(sen, n, len)
+  print(Sys.time() - start_time)
+  res
+}</code></pre>
+</div>
+<div id="testing-3" class="section level3">
+<h3>Testing 3</h3>
+<div id="test-3.1" class="section level4">
+<h4>Test 3.1</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred3(&quot;Well I&#39;m pretty sure my granny has some old bagpipes in her garage I&#39;ll dust them off and be on my&quot;)</code></pre>
+<pre><code>## [1] &quot;and&quot; &quot;be&quot;  &quot;on&quot;  &quot;my&quot; 
+## [1] 5
+## Time difference of 18.71014 secs</code></pre>
+<pre><code>##         word1 word2 word3 word4 word5 n         prop             phrase
+## 1581498   and    be    on    my mouth 1 1.127204e-07 and be on my mouth</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time</code></pre>
+<p>The time taken to produce the result is 18.71386 secs.</p>
+</div>
+<div id="test-3.2" class="section level4">
+<h4>Test 3.2</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred3(&quot;Talking to your mom has the same effect as a hug and helps reduce your&quot;)</code></pre>
+<pre><code>## [1] &quot;and&quot;    &quot;helps&quot;  &quot;reduce&quot; &quot;your&quot;  
+## [1] 5
+## [1] &quot;helps&quot;  &quot;reduce&quot; &quot;your&quot;  
+## [1] 4
+## [1] &quot;reduce&quot; &quot;your&quot;  
+## [1] 3
+## Time difference of 49.4272 secs</code></pre>
+<pre><code>##          word1 word2    word3 n         prop               phrase
+## 571932  reduce  your exposure 3 3.152703e-07 reduce your exposure
+## 1182712 reduce  your   intake 2 2.101802e-07   reduce your intake
+## 4005938 reduce  your   credit 1 1.050901e-07   reduce your credit
+## 4005939 reduce  your     debt 1 1.050901e-07     reduce your debt
+## 4005940 reduce  your   energy 1 1.050901e-07   reduce your energy
+## 4005941 reduce  your  monthly 1 1.050901e-07  reduce your monthly
+## 4005942 reduce  your     risk 1 1.050901e-07     reduce your risk
+## 4005943 reduce  your   team’s 1 1.050901e-07   reduce your team’s
+## 4005944 reduce  your     word 1 1.050901e-07     reduce your word</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 49.43774 secs</code></pre>
+<p>The time taken to produce the result is 49.43774 secs.</p>
+</div>
+<div id="test-3.3" class="section level4">
+<h4>Test 3.3</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred3(&quot;Be grateful for the good times and keep the faith during the&quot;)</code></pre>
+<pre><code>## [1] &quot;the&quot;    &quot;faith&quot;  &quot;during&quot; &quot;the&quot;   
+## [1] 5
+## [1] &quot;faith&quot;  &quot;during&quot; &quot;the&quot;   
+## [1] 4
+## Time difference of 31.95733 secs</code></pre>
+<pre><code>##         word1  word2 word3   word4 n        prop                   phrase
+## 2779917 faith during   the   three 1 1.08845e-07   faith during the three
+## 2779918 faith during   the worship 1 1.08845e-07 faith during the worship</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 31.9607 secs</code></pre>
+<p>The time taken to produce the result is 31.9607 secs.</p>
+</div>
+</div>
+<div id="evaluation-1" class="section level3">
+<h3>Evaluation</h3>
+<div id="result-1" class="section level4">
+<h4>Result</h4>
+<p>The time taken for each test has significantly decreased even with
+the quadgram and quintgram.<br />
+After testing, I found out that the sentence almost never matches the
+phrase in quintgram.</p>
+</div>
+<div id="room-of-improvement-1" class="section level4">
+<h4>Room of improvement</h4>
+<p>Remove quintgram from the prediction function</p>
+</div>
+</div>
+</div>
+<div id="model-4" class="section level2">
+<h2>Model 4</h2>
+<p>Decrease run time and processing powered needed of the function.</p>
+<div id="function-4" class="section level3">
+<h3>function 4</h3>
+<pre class="r"><code>predic4 &lt;- function(sen, n, len)
+{
+  filePath &lt;- paste0(&quot;ngramTable/ngram&quot;,as.character(n),&quot;_phrase_table.rds&quot;)
+  pt &lt;- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  print(sen[(len-n+2):len])
+  print(n)
+  if (n == 2)
+  {
+    resPt &lt;- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt &lt;- pt
+    for (i in 1:(n-1))
+    {
+      resPt &lt;- resPt[resPt[,i] == sen[len-n+i+1],]
+    }
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic4(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %&gt;% na.omit())
+  }
+}
+
+pred4 &lt;- function(sen)
+{
+  start_time &lt;- Sys.time()
+  sen &lt;- sen %&gt;% removePunctuation() %&gt;% tolower() %&gt;% str_split(&quot; &quot;)
+  sen &lt;- sen[[1]]
+  len &lt;- length(sen)
+  n &lt;- min(len, 4)
+  res &lt;- predic4(sen, n, len)
+  print(Sys.time() - start_time)
+  res
+}</code></pre>
+</div>
+<div id="testing-4" class="section level3">
+<h3>Testing 4</h3>
+<div id="test-4.1" class="section level4">
+<h4>Test 4.1</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred4(&quot;Well I&#39;m pretty sure my granny has some old bagpipes in her garage I&#39;ll dust them off and be on my&quot;)</code></pre>
+<pre><code>## [1] &quot;be&quot; &quot;on&quot; &quot;my&quot;
+## [1] 4
+## Time difference of 15.34302 secs</code></pre>
+<pre><code>##         word1 word2 word3 word4 n         prop         phrase
+## 658283     be    on    my  feet 2 2.176901e-07  be on my feet
+## 658284     be    on    my radio 2 2.176901e-07 be on my radio
+## 658285     be    on    my   way 2 2.176901e-07   be on my way
+## 2020956    be    on    my     a 1 1.088450e-07     be on my a
+## 2020957    be    on    my   bus 1 1.088450e-07   be on my bus
+## 2020958    be    on    my  ipod 1 1.088450e-07  be on my ipod
+## 2020959    be    on    my level 1 1.088450e-07 be on my level
+## 2020960    be    on    my  list 1 1.088450e-07  be on my list
+## 2020961    be    on    my  mind 1 1.088450e-07  be on my mind
+## 2020962    be    on    my mouth 1 1.088450e-07 be on my mouth</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time</code></pre>
+<p>The time taken to produce the result is 15.34679 secs.</p>
+</div>
+<div id="test-4.2" class="section level4">
+<h4>Test 4.2</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred4(&quot;Talking to your mom has the same effect as a hug and helps reduce your&quot;)</code></pre>
+<pre><code>## [1] &quot;helps&quot;  &quot;reduce&quot; &quot;your&quot;  
+## [1] 4
+## [1] &quot;reduce&quot; &quot;your&quot;  
+## [1] 3
+## Time difference of 23.79267 secs</code></pre>
+<pre><code>##          word1 word2    word3 n         prop               phrase
+## 571932  reduce  your exposure 3 3.152703e-07 reduce your exposure
+## 1182712 reduce  your   intake 2 2.101802e-07   reduce your intake
+## 4005938 reduce  your   credit 1 1.050901e-07   reduce your credit
+## 4005939 reduce  your     debt 1 1.050901e-07     reduce your debt
+## 4005940 reduce  your   energy 1 1.050901e-07   reduce your energy
+## 4005941 reduce  your  monthly 1 1.050901e-07  reduce your monthly
+## 4005942 reduce  your     risk 1 1.050901e-07     reduce your risk
+## 4005943 reduce  your   team’s 1 1.050901e-07   reduce your team’s
+## 4005944 reduce  your     word 1 1.050901e-07     reduce your word</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 23.80954 secs</code></pre>
+<p>The time taken to produce the result is 23.80954 secs.</p>
+</div>
+<div id="test-4.3" class="section level4">
+<h4>Test 4.3</h4>
+<pre class="r"><code>start_time &lt;- Sys.time()
+pred4(&quot;Be grateful for the good times and keep the faith during the&quot;)</code></pre>
+<pre><code>## [1] &quot;faith&quot;  &quot;during&quot; &quot;the&quot;   
+## [1] 4
+## Time difference of 15.01724 secs</code></pre>
+<pre><code>##         word1  word2 word3   word4 n        prop                   phrase
+## 2779917 faith during   the   three 1 1.08845e-07   faith during the three
+## 2779918 faith during   the worship 1 1.08845e-07 faith during the worship</code></pre>
+<pre class="r"><code>time_diff &lt;- Sys.time() - start_time
+time_diff</code></pre>
+<pre><code>## Time difference of 15.021 secs</code></pre>
+<p>The time taken to produce the result is 15.021 secs.</p>
+</div>
 </div>
 </div>
 </div>

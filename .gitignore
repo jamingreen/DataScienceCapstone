@@ -9,7 +9,10 @@ documentation.ver2.rmd
 documentation.ver2_cache/
 documentation.ver1_cache/
 documentation.ver1_files/
-documentation_files/
 documentation_cache/
+documentation_files/
 documentation.ver3_cache/
 documentation.ver3_files/
+execution.R
+full_ngram/
+ngramTable/

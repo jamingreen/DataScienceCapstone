@@ -46,14 +46,14 @@ I will be using the files in final/en_US folder mainly
 # Getting Data
 
 ### Load file
-```{r dnFi,eval= FALSE}
+```{r dnFi,cache=TRUE}
 fileB <- readLines("final/en_US/en_US.blogs.txt")
 fileN <- readLines("final/en_US/en_US.news.txt")
 fileT <- readLines("final/en_US/en_US.twitter.txt")
 fileA <- rbind(fileB, fileN, fileT)
 ```
 ### Summary
-```{r summ, eval= FALSE}
+```{r summ, cache=TRUE}
 summ <- sapply(list(fileB, fileN, fileT), stri_stats_general)
 wdctA <- sapply(list(fileB, fileN, fileT), wordcount)
 rbind(c("blogs", "news", "twitter"), summ, wdctA)
@@ -78,6 +78,9 @@ writeLines(samp, "sample.txt")
 ```
 Create a sample once and then load it from the sample.txt after the first time
 
+```{r gc1,echo=FALSE}
+rm(list= c("fileB", "fileA","fileT","fileT", "samp"))
+```
 ### Load Sample
 ```{r ldSam, cache=TRUE}
 sample_txt <- readLines("sample.txt")
@@ -133,7 +136,7 @@ unigram <- sample_txt %>% unnest_tokens(word, text)
 ```
 
 ### Unigram phrase table with proportion
-```{r uniPt, cache = TRUE}
+```{r uniPt, cache=TRUE}
 uniPt <- unigram %>%
   count(word,sort = TRUE) %>%  
   mutate(prop = n / sum(n))
@@ -167,7 +170,7 @@ bigram <- sample_txt %>% unnest_tokens(bigram,text, token = "ngrams", n = 2)
 ```
 
 ### Bigram phrase table with proportion
-```{r biPt, cache = TRUE}
+```{r biPt, cache=TRUE}
 biPt <- bigram %>%
   count(bigram, sort = TRUE) %>% 
   mutate(prop = n / sum(n)) %>% separate(bigram,c("word1", "word2"), sep = " ") %>% 
@@ -197,7 +200,7 @@ trigram <- sample_txt %>% unnest_tokens(trigram,text, token = "ngrams", n = 3)
 ```
 
 ### Trigram phrase table with proportion
-```{r triPt, cache = TRUE}
+```{r triPt, cache=TRUE}
 triPt <- trigram %>%
   count(trigram, sort = TRUE) %>%
   mutate(prop = n / sum(n)) %>% separate(trigram,c("word1", "word2", "word3"), sep = " ") %>%
@@ -221,10 +224,10 @@ g3
 "`r triPt$phrase[1]`", "`r triPt$phrase[2]`", and "`r triPt$phrase[3]`" have the three highest frequency in the trigrams.
 
 ## Save the phrase tables for later predictions
-```{r svPt, eval = FALSE}
-saveRDS(uniPt, "./ngramTable/unigram_phrase_table.rds")
-saveRDS(biPt, "./ngramTable/bigram_phrase_table.rds")
-saveRDS(triPt, "./ngramTable/trigram_phrase_table.rds")
+```{r svPt, cache=TRUE}
+saveRDS(uniPt, "./ngramTable/ngram1_phrase_table.rds")
+saveRDS(biPt, "./ngramTable/ngram2_phrase_table.rds")
+saveRDS(triPt, "./ngramTable/ngram3_phrase_table.rds")
 ```
 
 ## How many unique words is needed to cover 50% of the sample text?
@@ -262,3 +265,359 @@ I will create a prediction algorithm base on the n-grams words frequency. The fr
 ### Shiny app
 It will have a side panel which allow user to input word.
 It will also have the main panel which will produce output phrase from the prediction algorithm and the top three most probable phrase base on the probability distribution
+
+# Prediction
+
+## Model 1
+### function 1
+```{r pred1, cache=TRUE}
+predic1 <- function(sen, n, len)
+{
+  filePath <- paste0("ngramTable/ngram",as.character(n),"_phrase_table.rds")
+  pt <- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  if (n == 2)
+  {
+    resPt <- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt <- pt[which(apply(pt[,1:(n-1)],1,function(x) all(x == sen[(len-n+2):len]))),c(1:(n+1), n+3)]
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic1(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %>% na.omit())
+  }
+}
+
+pred1 <- function(sen)
+{
+  start_time <- Sys.time()
+  sen <- sen %>% removePunctuation() %>% tolower() %>% str_split(" ")
+  sen <- sen[[1]]
+  len <- length(sen)
+  n <- min(len, 3)
+  predic1(sen, n, len)
+}
+```
+This function use the unigram, bigram and trigram to predict the next word.  
+It will return the top 10 most probable result according to the n-grams.  
+1. It first check if there is any row in the trigram match the last two words in the sentence.  If yes, it returns the top 10 highest proportion result.
+2. If there is no row in the trigram that matches the sentence, it check from the bigram and return the result if it can find any row that matches. 
+3. If it still could not find any matches, it will return the top 10 highest frequency word in the unigram.
+
+
+
+### Testing 1
+
+#### Test 1.1
+```{r test1.1, cache=TRUE}
+start_time <- Sys.time()
+pred1("Well I'm pretty sure my granny has some old bagpipes in her garage I'll dust them off and be on my")
+time_diff <- Sys.time() - start_time
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 1.2
+```{r test1.2, cache=TRUE}
+start_time <- Sys.time()
+pred1("Talking to your mom has the same effect as a hug and helps reduce your")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 1.3
+```{r test1.3, cache=TRUE}
+start_time <- Sys.time()
+pred1("Be grateful for the good times and keep the faith during the")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+### Evaluation
+
+#### Result
+From the result, we can see that the there is too many result for some testing and the time is not ideal.  
+
+#### Room of improvement
+we can improve the algorithm in these direction:  
+
+1. Increase specificity
+2. Decrease processing time
+
+## Model 2
+
+I willcreate quadgram and quintgram to improve accuracy
+
+### Create quadgram and quintgram
+```{r 45Pt, eval=FALSE}
+sample_txt <- readLines("sample.txt")
+  sample_txt <-  gsub("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+","",sample_txt) %>% 
+    removePunctuation() %>%
+    removeNumbers() %>%
+    tolower() %>%
+    stripWhitespace()
+  sample_txt <- data.frame(text = sample_txt)
+  
+  quadgram <- sample_txt %>% unnest_tokens(quadgram,text, token = "ngrams", n = 4)
+  quadPt <- quadgram %>%
+    count(quadgram, sort = TRUE) %>%
+    mutate(prop = n / sum(n)) %>% separate(quadgram,c("word1", "word2", "word3", "word4"), sep = " ") %>%
+    mutate(phrase = paste(word1, word2, word3, word4)) %>% 
+    na.omit()
+  saveRDS(quadPt, "./ngramTable/ngram4_phrase_table.rds")
+  rm(list = c("quadgram","quadPt"))
+  
+  quintgram <- sample_txt %>% unnest_tokens(quintgram,text, token = "ngrams", n = 5)
+  quintPt <- quintgram %>%
+    count(quintgram, sort = TRUE) %>%
+    mutate(prop = n / sum(n)) %>% separate(quintgram,c("word1", "word2", "word3", "word4", "word5"), sep = " ") %>%
+    mutate(phrase = paste(word1, word2, word3, word4, word5)) %>% 
+    na.omit()
+  saveRDS(quintPt, "./ngramTable/ngram5_phrase_table.rds")
+  rm(list = c("quintgram","quintPt"))
+```
+
+### function 2
+```{r pred2, cache=TRUE}
+predic2 <- function(sen, n, len)
+{
+  filePath <- paste0("ngramTable/ngram",as.character(n),"_phrase_table.rds")
+  pt <- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  if (n == 2)
+  {
+    resPt <- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt <- pt[which(apply(pt[,1:(n-1)],1,function(x) all(x == sen[(len-n+2):len]))),c(1:(n+1), n+3)]
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic2(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %>% na.omit())
+  }
+}
+
+pred2 <- function(sen)
+{
+  start_time <- Sys.time()
+  sen <- sen %>% removePunctuation() %>% tolower() %>% str_split(" ")
+  sen <- sen[[1]]
+  len <- length(sen)
+  n <- min(len, 5)
+  predic2(sen, n, len)
+}
+```
+This function is the same as the previous one other than this one uses n-gram phrase table of higher order (4 and 5).
+
+### Testing 2
+
+#### Test 2.1
+```{r test2.1, cache=TRUE}
+start_time <- Sys.time()
+pred2("Well I'm pretty sure my granny has some old bagpipes in her garage I'll dust them off and be on my")
+time_diff <- Sys.time() - start_time
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 2.2
+```{r test2.2, cache=TRUE}
+start_time <- Sys.time()
+pred2("Talking to your mom has the same effect as a hug and helps reduce your")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 2.3
+```{r test2.3, cache=TRUE}
+start_time <- Sys.time()
+pred2("Be grateful for the good times and keep the faith during the")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+## Model 3
+
+Decrease run time and processing powered needed of the function.
+
+### function 3
+```{r pred3, cache=TRUE}
+predic3 <- function(sen, n, len)
+{
+  filePath <- paste0("ngramTable/ngram",as.character(n),"_phrase_table.rds")
+  pt <- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  print(sen[(len-n+2):len])
+  print(n)
+  if (n == 2)
+  {
+    resPt <- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt <- pt
+    for (i in 1:(n-1))
+    {
+      resPt <- resPt[resPt[,i] == sen[len-n+i+1],]
+    }
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic3(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %>% na.omit())
+  }
+}
+
+pred3 <- function(sen)
+{
+  start_time <- Sys.time()
+  sen <- sen %>% removePunctuation() %>% tolower() %>% str_split(" ")
+  sen <- sen[[1]]
+  len <- length(sen)
+  n <- min(len, 5)
+  res <- predic3(sen, n, len)
+  print(Sys.time() - start_time)
+  res
+}
+```
+
+### Testing 3
+
+#### Test 3.1
+```{r test3.1, cache=TRUE}
+start_time <- Sys.time()
+pred3("Well I'm pretty sure my granny has some old bagpipes in her garage I'll dust them off and be on my")
+time_diff <- Sys.time() - start_time
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 3.2
+```{r test3.2, cache=TRUE}
+start_time <- Sys.time()
+pred3("Talking to your mom has the same effect as a hug and helps reduce your")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 3.3
+```{r test3.3, cache=TRUE}
+start_time <- Sys.time()
+pred3("Be grateful for the good times and keep the faith during the")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+### Evaluation
+
+#### Result
+The time taken for each test has significantly decreased even with the quadgram and quintgram.  
+After testing, I found out that the sentence almost never matches the phrase in quintgram.  
+
+#### Room of improvement
+Remove quintgram from the prediction function
+
+## Model 4
+
+Decrease run time and processing powered needed of the function.
+
+### function 4
+```{r pred4, cache=TRUE}
+predic4 <- function(sen, n, len)
+{
+  filePath <- paste0("ngramTable/ngram",as.character(n),"_phrase_table.rds")
+  pt <- readRDS(filePath)
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  print(sen[(len-n+2):len])
+  print(n)
+  if (n == 2)
+  {
+    resPt <- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt <- pt
+    for (i in 1:(n-1))
+    {
+      resPt <- resPt[resPt[,i] == sen[len-n+i+1],]
+    }
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic4(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %>% na.omit())
+  }
+}
+
+pred4 <- function(sen)
+{
+  start_time <- Sys.time()
+  sen <- sen %>% removePunctuation() %>% tolower() %>% str_split(" ")
+  sen <- sen[[1]]
+  len <- length(sen)
+  n <- min(len, 4)
+  res <- predic4(sen, n, len)
+  print(Sys.time() - start_time)
+  res
+}
+```
+
+### Testing 4
+
+#### Test 4.1
+```{r test4.1, cache=TRUE}
+start_time <- Sys.time()
+pred4("Well I'm pretty sure my granny has some old bagpipes in her garage I'll dust them off and be on my")
+time_diff <- Sys.time() - start_time
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 4.2
+```{r test4.2, cache=TRUE}
+start_time <- Sys.time()
+pred4("Talking to your mom has the same effect as a hug and helps reduce your")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
+
+#### Test 4.3
+```{r test4.3, cache=TRUE}
+start_time <- Sys.time()
+pred4("Be grateful for the good times and keep the faith during the")
+time_diff <- Sys.time() - start_time
+time_diff
+```
+The time taken to produce the result is `r format(time_diff)`.
