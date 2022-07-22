@@ -20,6 +20,7 @@ library(tidytext)
 library(textmineR)
 library(RWeka)
 opts_chunk$set(echo = TRUE, cache = TRUE)
+opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
 ```
 
 # Abstract
@@ -30,11 +31,9 @@ Understanding the problem
 
 -Exploratory analysis
 
--Statistical modeling
-
 -Predictive modeling
 
--Creative exploration
+-Model Improving
 
 -Creating a data product
 
@@ -145,8 +144,7 @@ uniPt <- unigram %>%
 ```{r}
 head(uniPt, 20)
 ```
-
-#### top 20 words in unigram
+#### top 20 words in unigram  
 ```{r uniPlot, cache=TRUE}
 g1 <- ggplot(uniPt[1:20,], aes(x = reorder(word, -n), y = n, fill=word))
 g1 <- g1 + geom_bar(stat="identity") + 
@@ -224,7 +222,7 @@ g3
 "`r triPt$phrase[1]`", "`r triPt$phrase[2]`", and "`r triPt$phrase[3]`" have the three highest frequency in the trigrams.
 
 ## Save the phrase tables for later predictions
-```{r svPt, cache=TRUE}
+```{r svPt, eval=FALSE}
 saveRDS(uniPt, "./ngramTable/ngram1_phrase_table.rds")
 saveRDS(biPt, "./ngramTable/ngram2_phrase_table.rds")
 saveRDS(triPt, "./ngramTable/ngram3_phrase_table.rds")
@@ -356,7 +354,7 @@ we can improve the algorithm in these direction:
 
 ## Model 2
 
-I willcreate quadgram and quintgram to improve accuracy
+I will create quadgram and quintgram to improve accuracy
 
 ### Create quadgram and quintgram
 ```{r 45Pt, eval=FALSE}
@@ -621,3 +619,439 @@ time_diff <- Sys.time() - start_time
 time_diff
 ```
 The time taken to produce the result is `r format(time_diff)`.
+
+
+# Generate Text
+This function will generate a sentence with n number words.  
+1. It generates the first word at random with all words having equal weights.
+2. It generates the second word by matching the first word with the bigram and takes the phrase with highest frequency.
+3. It generates the remaining words by matching the last two words with the trigram and takes the phrase with highest frequency
+(There is a probability of 0.2 that the next word will be taken a random with weight corresponding to the frequency in the sample text file.)
+(If it cannot match the words, it find it in the n-gram of lower order)
+
+## function
+```{r gen, cache=TRUE}
+#' The function export is generate(n) where n is the number of words in the sentence it generate.
+#' This function will generate word using the word that is most frequent with a probability of 0.2 where it will generate according to the frequency in the sample text
+#' " done it in beach their of at i in isone was a siren rape and hear destroy ttt trys in"
+library(stringr)
+
+
+
+#' sen is the vector of words that needs to be matched
+#' pt is the phrase table
+#' n is the degree of the phrase table
+match_phrase <- function(sen, pt, n)
+{
+  sen <- str_split(sen, " ")[[1]]
+  len = length(sen)
+  resPt <- pt
+  
+  for (i in 1:(n-1))
+  {
+    resPt <- resPt[resPt[,i] == sen[len-n+i+1],]
+  }
+  resPt
+}
+
+roll <- function()
+{
+  if (sample(0:1, size = 1, prob = c(0.2,0.8)) == 1)
+  {
+    return(TRUE)
+  }
+  else
+  {
+    return(FALSE)
+  }
+    
+}
+
+genFirst2 <- function()
+{
+  
+  # generate first word
+  pt1 <- readRDS("./ngramTable/ngram1_phrase_table.rds")
+  
+  word <- sample(pt1$word, size = 1, prob = pt1$n)
+  sen <- word
+  rm(list= "pt1")
+
+  # generate second word
+  pt2 <- readRDS("./ngramTable/ngram2_phrase_table.rds")
+  respt <- match_phrase(sen, pt2, 2)
+  if (nrow(respt) == 0)
+  {
+    respt <- readRDS("./ngramTable/ngram1_phrase_table.rds")
+    word <- sample(respt$word, size = 1, prob = respt$n)
+  }
+  else if(roll())
+  {
+    word <- respt$word2[1]
+  }
+  else
+  {
+    word <- sample(respt$word2, size = 1, prob = respt$n)
+  }
+  sen <- paste(sen, word)
+  rm(list = c("respt", "pt2", "word"))
+  
+  return(sen)
+}
+
+genNext <- function(sen, pt3)
+{
+  respt <- match_phrase(sen, pt3, 3)
+  if (nrow(respt) == 0)
+  {
+    pt2 <- readRDS("./ngramTable/ngram2_phrase_table.rds")
+    respt <- match_phrase(sen, pt2, 2)
+    if (nrow(respt) == 0)
+    {
+      respt <- readRDS("./ngramTable/ngram1_phrase_table.rds")
+      word <- sample(respt$word, size = 1, prob = respt$n)
+      rm(list = "respt")
+    }
+    else if (roll())
+    {
+      word <- respt$word2[1]
+    }
+    else
+    {
+      word <- sample(respt$word2, size = 1, prob = respt$n)
+      rm(list = "respt")
+    }
+    rm(list = "pt2")
+  }
+  else if (roll())
+  {
+    word <- respt$word3[1]
+  }
+  else
+  {
+    word <- sample(respt$word3, size = 1, prob = respt$n)
+  }
+  sen <- paste(sen, word)
+  return(sen)
+}
+
+
+
+
+
+
+generate <- function(n)
+{
+  n <- as.numeric(n)
+  if (is.na(n))
+  {
+    return("Please input a positive integer")
+  }
+  if (n<0 | n > 30 | !n%%1 == 0)
+  {
+    return("Number not valid. (need to be positive integer smaller than or equal to 30)")
+  }
+  if (n==1)
+  {
+    pt1 <- readRDS("./ngramTable/ngram1_phrase_table.rds")
+    word <- sample(pt1$word, size = 1)
+    return(word)
+  }
+  else if (n==2)
+  {
+    return(genFirst2())
+  }
+  else if(n > 2)
+  {
+    pt3 <- readRDS("./ngramTable/ngram3_phrase_table.rds")
+    sen <- genFirst2()
+    for (i in 1:(n-2))
+    {
+      sen <- genNext(sen, pt3)
+    }
+    return(sen)
+  }
+}
+```
+
+## Test
+### Test 1 (generate 30 words sentence)
+```{r genTest1, cache=TRUE}
+start_time <- Sys.time()
+generate(30)
+time_diff <- Sys.time() - start_time
+```
+The time difference is `r format(time_diff)`
+
+### Test 2 (generate 30 words sentence)
+```{r genTest2, cache=TRUE}
+start_time <- Sys.time()
+generate(30)
+time_diff <- Sys.time() - start_time
+```
+The time difference is `r format(time_diff)`
+
+### Invalid input test
+```{r iit, cache=TRUE}
+generate(-1)
+generate(0.1)
+generate("ABC")
+```
+
+# Create Data Product
+It will be a shiny apps that allows user to input sentence / words and the app will return the prediction accordingly.  
+I will also allow user to enter a integer n and generate a sentence with length n.  
+
+## Model improvement
+In order to provide immediate prediction, I will decrease the processing time by reducing the n-grams phrase table to only cover 50% of the word / phrase.  
+
+### Unigram reduction
+```{r uni50, cache=TRUE}
+wdct1 <- sum(uniPt$n)
+count <- 0
+tar <- wdct1 *0.5
+for (i in 1:nrow(uniPt))
+{
+  count <- count + uniPt$n[i]
+  if (count > tar)
+  {
+    break
+  }
+}
+uniPt <- uniPt[1:i,c(1,3)]
+i
+```
+
+```{r svuni50, eval=FALSE}
+saveRDS(uniPt, "./ngramTable50/ngram1_phrase_table.rds")
+```
+
+### Bigram reduction
+```{r bi50, cache=TRUE}
+wdct2 <- sum(biPt$n)
+count <- 0
+tar <- wdct2 *0.3
+for (j in 1:nrow(biPt))
+{
+  count <- count + biPt$n[j]
+  if (count > tar)
+  {
+    break
+  }
+}
+biPt <- biPt[1:j, c(1,2,4)]
+```
+
+```{r svbi50, cache=FALSE}
+saveRDS(biPt, "./ngramTable30/ngram2_phrase_table.rds")
+```
+
+### Trigram reduction
+```{r tri50, cache=TRUE}
+wdct3 <- sum(triPt$n)
+count <- 0
+tar <- wdct3 *0.3
+for (k in 1:nrow(triPt))
+{
+  count <- count + triPt$n[k]
+  if (count > tar)
+  {
+    break
+  }
+}
+triPt <- triPt[1:k, c(1,2,3,5)]
+```
+
+```{r svtri50, cache=FALSE}
+saveRDS(triPt, "./ngramTable30/ngram3_phrase_table.rds")
+```
+
+## Prediction algorithm for shiny app
+```{r shiPred, eval=FALSE}
+pt1 <- readRDS("../ngramTable50/ngram1_phrase_table.rds")
+pt2 <- readRDS("../ngramTable50/ngram2_phrase_table.rds")
+pt3 <- readRDS("../ngramTable50/ngram3_phrase_table.rds")
+
+predic <- function(sen, n, len)
+{
+  if (n == 1)
+  {
+    pt <- pt1
+  }
+  else if (n == 2)
+  {
+    pt <- pt2
+  }
+  else
+  {
+    pt <- pt3
+  }
+  if (n == 1)
+  {
+    return(pt[1:10,1])
+  }
+  if (n == 2)
+  {
+    resPt <- pt[pt[,1] == sen[len],c(3,5)]
+  }
+  else
+  {
+    resPt <- pt
+    for (i in 1:(n-1))
+    {
+      resPt <- resPt[resPt[,i] == sen[len-n+i+1],]
+    }
+  }
+  if (nrow(resPt) ==0)
+  {
+    return(predic(sen, n-1, len))
+  }
+  else
+  {
+    return(resPt[1:10,] %>% na.omit())
+  }
+}
+
+pred <- function(sen)
+{
+  start_time <- Sys.time()
+  sen <- sen %>% removePunctuation() %>% tolower() %>% str_split(" ")
+  sen <- sen[[1]]
+  len <- length(sen)
+  n <- min(len, 3)
+  res <- predic(sen, n, len)
+  res[1,ncol(res)-1]
+}
+```
+
+## Generate sentence Algorithm
+```{r genAl, cache=TRUE}
+#' The function export is generate(n) where n is the number of words in the sentence it generate.
+#' This function will generate word using the word that is most frequent with a probability of 0.2 where it will generate according to the frequency in the sample text
+
+
+
+#' sen is the vector of words that needs to be matched
+#' pt is the phrase table
+#' n is the degree of the phrase table
+match_phrase <- function(sen, pt, n)
+{
+  sen <- str_split(sen, " ")[[1]]
+  len = length(sen)
+  resPt <- pt
+  
+  for (i in 1:(n-1))
+  {
+    resPt <- resPt[resPt[,i] == sen[len-n+i+1],]
+  }
+  resPt
+}
+
+roll <- function()
+{
+  if (sample(0:1, size = 1, prob = c(0.2,0.8)) == 1)
+  {
+    return(TRUE)
+  }
+  else
+  {
+    return(FALSE)
+  }
+  
+}
+
+genFirst2 <- function()
+{
+  
+  # generate first word
+  
+  word <- sample(pt1$word, size = 1, prob = pt1$prop)
+  sen <- word
+
+  # generate second word
+  respt <- match_phrase(sen, pt2, 2)
+  if (nrow(respt) == 0)
+  {
+    word <- sample(pt1$word, size = 1, prob = pt1$prop)
+  }
+  else if(roll())
+  {
+    word <- respt$word2[1]
+  }
+  else
+  {
+    word <- sample(respt$word2, size = 1, prob = respt$prop)
+  }
+  sen <- paste(sen, word)
+
+  return(sen)
+}
+
+genNext <- function(sen, pt3)
+{
+  respt <- match_phrase(sen, pt3, 3)
+  if (nrow(respt) == 0)
+  {
+    respt <- match_phrase(sen, pt2, 2)
+    if (nrow(respt) == 0)
+    {
+      word <- sample(pt1$word, size = 1, prob = pt1$prop)
+    }
+    else if (roll())
+    {
+      word <- respt$word2[1]
+    }
+    else
+    {
+      word <- sample(respt$word2, size = 1, prob = respt$prop)
+    }
+  }
+  else if (roll())
+  {
+    word <- respt$word3[1]
+  }
+  else
+  {
+    word <- sample(respt$word3, size = 1, prob = respt$prop)
+  }
+  sen <- paste(sen, word)
+  return(sen)
+}
+
+
+
+
+
+
+generate <- function(n)
+{
+  if (is.na(as.numeric(n))| n<0 | n > 30 | !n%%1 == 0)
+  {
+    return("Number not valid. (need to be positive integer smaller than or equal to 30)")
+  }
+  if (n==1)
+  {
+    word <- sample(pt1$word, size = 1)
+    return(word)
+  }
+  else if (n==2)
+  {
+    return(genFirst2())
+  }
+  else if(n > 2)
+  {
+    sen <- genFirst2()
+    for (i in 1:(n-2))
+    {
+      sen <- genNext(sen, pt3)
+    }
+    return(sen)
+  }
+}
+```
+
+```{r svPlot}
+saveRDS(g1, "Data_SciencE_Capstone/plots/plot1.rds")
+saveRDS(g2, "Data_SciencE_Capstone/plots/plot2.rds")
+saveRDS(g3, "Data_SciencE_Capstone/plots/plot3.rds")
+```

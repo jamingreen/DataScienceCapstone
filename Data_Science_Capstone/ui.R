@@ -1,33 +1,53 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
+library(markdown)
 
-# Define UI for application that draws a histogram
-shinyUI(fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins
+navbarPage("Natural Language Processing",
+  tabPanel("Prediction",
     sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
-    )
-))
+      sidebarPanel(
+        h2("Prediction"),
+        textInput("sen", "sentence")
+      ),
+      
+      # Show a plot of the generated distribution
+      mainPanel(
+        textOutput("predSen")
+      )
+  )),
+  tabPanel("generate", sidebarLayout(
+      sidebarPanel(
+       p("The tab generate sentence with n-gram algorith."),
+       br(),
+       p("You can enter the number of words in the sentence"),
+       textInput("num", "number of words"),
+      ),
+      mainPanel(
+       textOutput("genSen")
+      )
+  )),
+  tabPanel("Unigram phrase table",
+           sidebarLayout(
+             sidebarPanel(tableOutput("uniPt")),
+             mainPanel(
+               plotOutput("uniPlot")
+             )
+           )
+  ),
+  tabPanel("Bigram phrase table",
+   sidebarLayout(
+     sidebarPanel(tableOutput("biPt")),
+     mainPanel(
+       plotOutput("biPlot")
+     )
+   )
+  ),
+  tabPanel("Trigram phrase table",
+           sidebarLayout(
+             sidebarPanel(tableOutput("triPt")),
+             mainPanel(
+               plotOutput("triPlot")
+             )
+           )
+  ),
+           
+)
